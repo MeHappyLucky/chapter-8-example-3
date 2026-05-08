@@ -19,5 +19,9 @@ set -u # or set -o nounset
 : "$REGISTRY_UN"
 : "$REGISTRY_PW"
 
-echo $REGISTRY_PW | docker login $CONTAINER_REGISTRY --username $REGISTRY_UN --password-stdin
+# CONTAINER_REGISTRY may include a namespace (e.g. docker.io/<user>).
+# Docker login expects the registry host only.
+LOGIN_REGISTRY="$(echo "$CONTAINER_REGISTRY" | cut -d'/' -f1)"
+
+echo "$REGISTRY_PW" | docker login "$LOGIN_REGISTRY" --username "$REGISTRY_UN" --password-stdin
 docker push $CONTAINER_REGISTRY/video-streaming:$VERSION
