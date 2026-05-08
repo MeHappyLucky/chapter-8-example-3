@@ -30,6 +30,10 @@ jobs:
       CONTAINER_REGISTRY: ${{ secrets.CONTAINER_REGISTRY }}
       REGISTRY_UN: ${{ secrets.REGISTRY_UN }}
       REGISTRY_PW: ${{ secrets.REGISTRY_PW  }}
+      # GKE details (derived from your current kubectl context).
+      GCP_PROJECT_ID: gcp-consul-493908
+      GKE_CLUSTER_NAME: flixtube
+      GKE_LOCATION: us-central1-a
 
     steps:
       
@@ -49,13 +53,33 @@ jobs:
         run: ./scripts/push-image.sh
 
       #
-      # Installs Kubectl and connects it to the cluster.
+      # Authenticates to GCP (Service Account JSON).
+      #
+      # Add this repo secret:
+      # - GCP_SA_KEY: Service account JSON with permission to access the GKE cluster.
+      #
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      #
+      # Fetches GKE credentials and configures kubectl context.
+      #
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          cluster_name: ${{ env.GKE_CLUSTER_NAME }}
+          location: ${{ env.GKE_LOCATION }}
+
+      #
+      # Installs kubectl.
       #
       # https://github.com/marketplace/actions/kubernetes-cli-kubectl
       #
       - uses: tale/kubectl-action@v1
         with:
-          base64-kube-config: ${{ secrets.KUBE_CONFIG }}
           kubectl-version: v1.24.2
       
       #
